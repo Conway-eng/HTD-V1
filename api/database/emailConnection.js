@@ -11,13 +11,13 @@ const nodemailer = require('nodemailer');
 
 
 const transporter = nodemailer.createTransport({
-    host: 'yourhost.com',
-    port: 465, 
-    secure: true,
+    host: 'relay.dnsexit.com',
+    port: 587,
+    secure: false,
     auth: {
-        user: 'whatever@yours.com',
-        pass: ''
-    }
+       user: 'conway360',
+    pass: 'kim2024K'
+      }
 });
 
 
