@@ -21,19 +21,22 @@ SET time_zone = "+00:00";
 -- Database: `talkdrove_HTD`
 --
 
--- --------------------------------------------------------
 
---
+-- Drop existing table if it exists to avoid conflict
+DROP TABLE IF EXISTS `activity_log`;
+
+-- ---------------------------------------------
 -- Table structure for table `activity_log`
---
-
+-- ---------------------------------------------
 CREATE TABLE `activity_log` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `action` varchar(255) NOT NULL,
-  `details` text DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `user_id` INT(11) NOT NULL,
+  `action` VARCHAR(255) NOT NULL,
+  `details` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
