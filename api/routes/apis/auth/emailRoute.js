@@ -4,13 +4,11 @@ const router = express.Router();
 const cron = require('node-cron');
 const isAdmin = require('../../../middlewares/isAdmin');
 
-
 class EmailSenderManager {
     constructor(pool) {
         this.pool = pool;
     }
 
-    
     async addEmailSender(emailData) {
         const connection = await this.pool.getConnection();
         try {
@@ -24,7 +22,7 @@ class EmailSenderManager {
 
             const [result] = await connection.query(
                 `INSERT INTO email_senders (email, password, host, port, daily_limit) 
-                VALUES (?, ?, ?, ?, ?)`,
+                 VALUES (?, ?, ?, ?, ?)`,
                 [email, password, host, port, daily_limit]
             );
 
@@ -34,15 +32,14 @@ class EmailSenderManager {
         }
     }
 
-    
     async getAvailableSender() {
         const connection = await this.pool.getConnection();
         try {
             const [senders] = await connection.query(`
                 SELECT * FROM email_senders 
                 WHERE is_active = 1 
-                AND current_daily_count < daily_limit 
-                AND (last_reset_date IS NULL OR last_reset_date != CURRENT_DATE)
+                  AND current_daily_count < daily_limit 
+                  AND (last_reset_date IS NULL OR last_reset_date != CURRENT_DATE)
                 ORDER BY current_daily_count ASC 
                 LIMIT 1
             `);
@@ -53,29 +50,27 @@ class EmailSenderManager {
         }
     }
 
-  
-async updateEmailSender(id, updateData) {
-    const connection = await this.pool.getConnection();
-    try {
-        if (Object.keys(updateData).length === 0) {
-            throw new Error('No update data provided');
+    async updateEmailSender(id, updateData) {
+        const connection = await this.pool.getConnection();
+        try {
+            if (Object.keys(updateData).length === 0) {
+                throw new Error('No update data provided');
+            }
+
+            const updateFields = Object.keys(updateData)
+                .map(key => `${key} = ?`)
+                .join(', ');
+            const values = [...Object.values(updateData), id];
+
+            await connection.query(
+                `UPDATE email_senders SET ${updateFields} WHERE id = ?`,
+                values
+            );
+        } finally {
+            connection.release();
         }
-
-        const updateFields = Object.keys(updateData)
-            .map(key => `${key} = ?`)
-            .join(', ');
-
-        const values = [...Object.values(updateData), id];
-
-        await connection.query(
-            `UPDATE email_senders SET ${updateFields} WHERE id = ?`,
-            values
-        );
-    } finally {
-        connection.release();
     }
-}
-    
+
     async resetDailyCounts() {
         const connection = await this.pool.getConnection();
         try {
@@ -88,7 +83,6 @@ async updateEmailSender(id, updateData) {
         }
     }
 
-    
     async resetHourlyMsgEmail() {
         const connection = await this.pool.getConnection();
         try {
@@ -105,7 +99,6 @@ async updateEmailSender(id, updateData) {
         }
     }
 
-    
     async trackEmailSent(senderId) {
         const connection = await this.pool.getConnection();
         try {
@@ -121,7 +114,6 @@ async updateEmailSender(id, updateData) {
         }
     }
 
-    
     async getAllEmailSenders() {
         const connection = await this.pool.getConnection();
         try {
@@ -145,6 +137,7 @@ async updateEmailSender(id, updateData) {
     }
 }
 
+// API Routes
 
 router.post('/api/admin/add-email', isAdmin, async (req, res) => {
     try {
@@ -165,7 +158,6 @@ router.post('/api/admin/add-email', isAdmin, async (req, res) => {
     }
 });
 
-
 router.put('/api/admin/update-email/:id', isAdmin, async (req, res) => {
     try {
         const emailSenderManager = new EmailSenderManager(pool);
@@ -184,8 +176,7 @@ router.put('/api/admin/update-email/:id', isAdmin, async (req, res) => {
     }
 });
 
-
-router.get('/api/admin/all-emails', async (req, res) => {
+router.get('/api/admin/all-emails', isAdmin, async (req, res) => {
     try {
         const emailSenderManager = new EmailSenderManager(pool);
         const senders = await emailSenderManager.getAllEmailSenders();
@@ -203,11 +194,11 @@ router.get('/api/admin/all-emails', async (req, res) => {
     }
 });
 
-
+// Cron jobs for automatic resets
 function setupEmailResetJobs(pool) {
     const emailSenderManager = new EmailSenderManager(pool);
 
-    
+    // Daily reset at midnight
     cron.schedule('0 0 * * *', async () => {
         try {
             await emailSenderManager.resetDailyCounts();
@@ -217,7 +208,7 @@ function setupEmailResetJobs(pool) {
         }
     });
 
-    
+    // Hourly reset for msg@talkdrove.com
     cron.schedule('1 */1 * * *', async () => {
         try {
             await emailSenderManager.resetHourlyMsgEmail();
@@ -228,6 +219,7 @@ function setupEmailResetJobs(pool) {
     });
 }
 
+// Export
 module.exports = {
     EmailSenderManager,
     router,
